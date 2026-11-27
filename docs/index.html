@@ -5,109 +5,247 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>متابعة منتجات الألبان</title>
 <style>
-  :root { --ink:#1d2b3a; --muted:#5b6b7b; --brand:#1f6feb; --bg:#f6f9fc; --card:#fff; --line:#e3eaf2; }
+  :root { --ink:#1d2b3a; --muted:#5b6b7b; --brand:#1f6feb; --bg:#f6f9fc; --card:#fff; --line:#e3eaf2; --bad:#c62828; --ok:#1b7f3b; }
   * { box-sizing: border-box; }
   body { margin:0; font-family: system-ui, "Segoe UI", Tahoma, sans-serif; color:var(--ink); background:var(--bg); line-height:1.7; }
-  .wrap { max-width:960px; margin:0 auto; padding:0 20px; }
-  nav { display:flex; justify-content:space-between; align-items:center; padding:18px 0; font-weight:700; }
+  .wrap { max-width:1000px; margin:0 auto; padding:0 20px; }
+  nav { display:flex; justify-content:space-between; align-items:center; padding:16px 0; font-weight:700; gap:12px; }
   nav a { color:var(--brand); text-decoration:none; font-weight:600; }
   .hero { display:grid; gap:32px; grid-template-columns:1.2fr 1fr; align-items:center; padding:40px 0 56px; }
   h1 { font-size:2.2rem; line-height:1.3; margin:0 0 12px; }
   .hero p { color:var(--muted); font-size:1.1rem; margin:0; }
   .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:24px; }
   .features { display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); padding-bottom:56px; }
+  .features a { color:inherit; text-decoration:none; }
   .features h3 { margin:0 0 6px; font-size:1.05rem; }
   .features p { margin:0; color:var(--muted); font-size:.95rem; }
-  form { display:grid; gap:12px; }
-  label { font-size:.9rem; color:var(--muted); }
-  input { width:100%; padding:11px 12px; border:1px solid var(--line); border-radius:8px; font:inherit; }
-  button { padding:12px; border:0; border-radius:8px; background:var(--brand); color:#fff; font:inherit; font-weight:700; cursor:pointer; }
+  form.stack { display:grid; gap:12px; }
+  label { font-size:.9rem; color:var(--muted); display:block; }
+  input, select { width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; font:inherit; background:#fff; }
+  button { padding:10px 16px; border:0; border-radius:8px; background:var(--brand); color:#fff; font:inherit; font-weight:700; cursor:pointer; }
   button:disabled { opacity:.6; }
-  .tabs { display:flex; gap:8px; margin-bottom:14px; }
-  .tabs button { flex:1; background:#eef3f9; color:var(--ink); }
+  button.ghost { background:#eef3f9; color:var(--ink); }
+  button.del { background:#fdecea; color:var(--bad); }
+  button.sm { padding:5px 10px; font-size:.85rem; }
+  .tabs { display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
+  .tabs button { background:#eef3f9; color:var(--ink); }
   .tabs button.on { background:var(--brand); color:#fff; }
-  #msg { min-height:1.4em; font-size:.92rem; }
-  #msg.err { color:#c62828; } #msg.ok { color:#1b7f3b; }
+  .bar { display:flex; justify-content:space-between; align-items:center; margin:8px 0 12px; }
+  .bar h2 { margin:0; font-size:1.25rem; }
+  .tbl { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+  th, td { padding:10px 12px; text-align:right; border-bottom:1px solid var(--line); white-space:nowrap; }
+  th { background:#f0f5fa; font-size:.9rem; color:var(--muted); }
+  td.act { display:flex; gap:6px; }
+  .empty { padding:24px; text-align:center; color:var(--muted); }
+  .late { color:var(--bad); font-weight:700; }
+  #msg, #amsg { min-height:1.4em; font-size:.92rem; }
+  .err { color:var(--bad); } .ok { color:var(--ok); }
+  dialog { border:0; border-radius:14px; padding:24px; width:min(440px,92vw); direction:rtl; }
+  dialog::backdrop { background:rgba(0,0,0,.4); }
+  dialog .row { display:flex; gap:8px; margin-top:6px; }
   footer { text-align:center; color:var(--muted); padding:24px 0 40px; font-size:.9rem; }
+  .hide { display:none !important; }
   @media (max-width:720px){ .hero{grid-template-columns:1fr;} h1{font-size:1.7rem;} }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <nav><span>🥛 متابعة الألبان</span><a href="#auth">تسجيل الدخول</a></nav>
+  <nav>
+    <span>🥛 متابعة الألبان</span>
+    <span id="who" class="hide"><span id="email"></span> <button class="ghost sm" id="out">خروج</button></span>
+    <a id="login-link" href="#auth">تسجيل الدخول</a>
+  </nav>
 
-  <section class="hero">
-    <div>
-      <h1>تابع منتجاتك وشاحناتك ومبيعاتك في مكان واحد</h1>
-      <p>تطبيق ويب لإدارة منتجات الألبان، ودرجات حرارة الشاحنات والأختام، والشحنات والمبيعات، مع بيانات محفوظة ومشتركة بين فريقك.</p>
-    </div>
-
-    <div class="card" id="auth">
-      <div class="tabs">
-        <button type="button" id="tab-in" class="on">دخول</button>
-        <button type="button" id="tab-up">حساب جديد</button>
+  <!-- صفحة الهبوط (قبل الدخول) -->
+  <div id="landing">
+    <section class="hero">
+      <div>
+        <h1>تابع منتجاتك وشاحناتك ومبيعاتك في مكان واحد</h1>
+        <p>تطبيق ويب لإدارة منتجات الألبان، ودرجات حرارة الشاحنات والأختام، والشحنات والمبيعات، مع بيانات محفوظة ومشتركة بين فريقك.</p>
       </div>
-      <form id="f">
-        <div><label for="email">البريد الإلكتروني</label><input id="email" type="email" required autocomplete="email"></div>
-        <div><label for="pw">كلمة المرور</label><input id="pw" type="password" required minlength="6" autocomplete="current-password"></div>
-        <button id="go">دخول</button>
-        <div id="msg" role="status"></div>
-      </form>
-    </div>
-  </section>
+      <div class="card" id="auth">
+        <div class="tabs">
+          <button type="button" id="tab-in" class="on">دخول</button>
+          <button type="button" id="tab-up">حساب جديد</button>
+        </div>
+        <form id="f" class="stack">
+          <div><label for="em">البريد الإلكتروني</label><input id="em" type="email" required autocomplete="email"></div>
+          <div><label for="pw">كلمة المرور</label><input id="pw" type="password" required minlength="6" autocomplete="current-password"></div>
+          <button id="go">دخول</button>
+          <div id="msg" role="status"></div>
+        </form>
+      </div>
+    </section>
+    <section class="features">
+      <a href="#auth"><div class="card"><h3>📦 المنتجات</h3><p>الأنواع والكميات وتواريخ الإنتاج والصلاحية.</p></div></a>
+      <a href="#auth"><div class="card"><h3>🚚 الشاحنات</h3><p>درجات الحرارة وأرقام الأختام لكل رحلة.</p></div></a>
+      <a href="#auth"><div class="card"><h3>💰 المبيعات</h3><p>تتبع الشحنات والمبيعات.</p></div></a>
+      <a href="#auth"><div class="card"><h3>☁️ سحابي</h3><p>بياناتك محفوظة ومتاحة من أي جهاز.</p></div></a>
+    </section>
+  </div>
 
-  <section class="features">
-    <div class="card"><h3>📦 المنتجات</h3><p>الأنواع والكميات وتواريخ الإنتاج والصلاحية.</p></div>
-    <div class="card"><h3>🚚 الشاحنات</h3><p>درجات الحرارة وأرقام الأختام لكل رحلة.</p></div>
-    <div class="card"><h3>💰 المبيعات</h3><p>تتبع الشحنات والمبيعات والتقارير.</p></div>
-    <div class="card"><h3>☁️ سحابي</h3><p>بياناتك محفوظة ومتاحة من أي جهاز.</p></div>
-  </section>
+  <!-- التطبيق (بعد الدخول) -->
+  <div id="app" class="hide">
+    <div class="tabs" id="app-tabs"></div>
+    <div class="bar"><h2 id="title"></h2><button id="add">+ إضافة</button></div>
+    <div id="amsg" role="status"></div>
+    <div class="tbl" id="view"></div>
+  </div>
 
   <footer>© متابعة منتجات الألبان</footer>
 </div>
 
+<dialog id="dlg"><form id="df" class="stack"></form></dialog>
+
 <script type="module">
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// Supabase > Project Settings > API > "anon public" key (safe to expose; protect data with RLS).
+// مفتاح publishable علني بطبيعته؛ الحماية الفعلية عبر RLS في supabase/schema.sql
 const SUPABASE_URL = "https://uxdijsgxdakuvqqrrrqu.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_l8A1u15_KDq10gwHQpaFhQ_xwRHbdvA";
-
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-const $ = id => document.getElementById(id);
-let mode = "in";
 
+// تعريف الأقسام: كل قسم جدول في Supabase وحقوله
+const T = {
+  products: { title: "المنتجات", f: [
+    { k: "name", l: "الاسم", req: 1 }, { k: "type", l: "النوع" },
+    { k: "qty", l: "الكمية", t: "number" }, { k: "unit", l: "الوحدة" },
+    { k: "produced_on", l: "تاريخ الإنتاج", t: "date" }, { k: "expires_on", l: "تاريخ الانتهاء", t: "date", expiry: 1 } ] },
+  trucks: { title: "الشاحنات", f: [
+    { k: "plate", l: "رقم اللوحة", req: 1 }, { k: "driver", l: "السائق" },
+    { k: "temperature", l: "درجة الحرارة °م", t: "number" }, { k: "seal_no", l: "رقم الختم" } ] },
+  sales: { title: "الشحنات والمبيعات", f: [
+    { k: "sold_on", l: "التاريخ", t: "date", req: 1 }, { k: "customer", l: "العميل" },
+    { k: "product_id", l: "المنتج", ref: "products", show: "name" },
+    { k: "truck_id", l: "الشاحنة", ref: "trucks", show: "plate" },
+    { k: "qty", l: "الكمية", t: "number" }, { k: "price", l: "السعر", t: "number" } ] },
+};
+
+const $ = id => document.getElementById(id);
+const el = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); e.append(...kids); return e; };
+const say = (node, text, cls) => { node.className = cls || ""; node.textContent = text; };
+
+let cur = "products", refs = {};
+
+/* ---------- الدخول ---------- */
+let mode = "in";
 function setMode(m) {
   mode = m;
   $("tab-in").classList.toggle("on", m === "in");
   $("tab-up").classList.toggle("on", m === "up");
   $("go").textContent = m === "in" ? "دخول" : "إنشاء حساب";
-  $("msg").textContent = "";
+  say($("msg"), "");
 }
 $("tab-in").onclick = () => setMode("in");
 $("tab-up").onclick = () => setMode("up");
 
-function say(text, cls) { $("msg").className = cls; $("msg").textContent = text; }
-
-async function showSession() {
-  const { data } = await sb.auth.getSession();
-  if (!data.session) return;
-  $("auth").innerHTML = `<p>مرحباً ${data.session.user.email}</p><button id="out">تسجيل الخروج</button>`;
-  $("out").onclick = async () => { await sb.auth.signOut(); location.reload(); };
-}
-
 $("f").onsubmit = async e => {
   e.preventDefault();
   $("go").disabled = true;
-  const creds = { email: $("email").value.trim(), password: $("pw").value };
+  const creds = { email: $("em").value.trim(), password: $("pw").value };
   const { error } = mode === "in" ? await sb.auth.signInWithPassword(creds) : await sb.auth.signUp(creds);
   $("go").disabled = false;
-  if (error) return say(error.message, "err");
-  if (mode === "up") return say("تم إنشاء الحساب. تحقق من بريدك لتأكيده.", "ok");
-  showSession();
+  if (error) return say($("msg"), error.message, "err");
+  if (mode === "up") say($("msg"), "تم إنشاء الحساب. تحقق من بريدك لتأكيده.", "ok");
 };
+$("out").onclick = () => sb.auth.signOut();
 
-showSession();
+/* ---------- عرض الحالة ---------- */
+function render(session) {
+  const on = !!session;
+  $("landing").classList.toggle("hide", on);
+  $("app").classList.toggle("hide", !on);
+  $("who").classList.toggle("hide", !on);
+  $("login-link").classList.toggle("hide", on);
+  if (!on) return;
+  $("email").textContent = session.user.email;
+  const tabs = $("app-tabs");
+  tabs.replaceChildren(...Object.entries(T).map(([k, c]) =>
+    el("button", { textContent: c.title, onclick: () => show(k) })));
+  show(cur);
+}
+sb.auth.onAuthStateChange((_e, session) => render(session));
+sb.auth.getSession().then(({ data }) => render(data.session));
+
+/* ---------- الجداول ---------- */
+async function loadRefs(tab) {
+  refs = {};
+  for (const f of T[tab].f.filter(f => f.ref)) {
+    const { data } = await sb.from(f.ref).select("*").order("id");
+    refs[f.k] = data || [];
+  }
+}
+const refName = (f, id) => (refs[f.k].find(r => r.id === id) || {})[f.show] ?? "";
+
+async function show(tab) {
+  cur = tab;
+  const c = T[tab];
+  [...$("app-tabs").children].forEach((b, i) => b.classList.toggle("on", Object.keys(T)[i] === tab));
+  $("title").textContent = c.title;
+  say($("amsg"), "");
+  $("view").replaceChildren(el("div", { className: "empty", textContent: "جارٍ التحميل…" }));
+  await loadRefs(tab);
+  const { data, error } = await sb.from(tab).select("*").order("id", { ascending: false });
+  if (error) return $("view").replaceChildren(el("div", { className: "empty err", textContent: error.message }));
+  if (!data.length) return $("view").replaceChildren(el("div", { className: "empty", textContent: "لا توجد بيانات بعد. اضغط + إضافة." }));
+
+  const today = new Date().toISOString().slice(0, 10);
+  const head = el("tr", {}, ...c.f.map(f => el("th", { textContent: f.l })), el("th"));
+  const rows = data.map(r => el("tr", {}, ...c.f.map(f => {
+    const v = f.ref ? refName(f, r[f.k]) : (r[f.k] ?? "");
+    return el("td", { textContent: v, className: f.expiry && v && v < today ? "late" : "" });
+  }), el("td", { className: "act" },
+    el("button", { className: "ghost sm", textContent: "تعديل", onclick: () => form(r) }),
+    el("button", { className: "del sm", textContent: "حذف", onclick: () => remove(r) }))));
+  $("view").replaceChildren(el("table", {}, el("thead", {}, head), el("tbody", {}, ...rows)));
+}
+
+/* ---------- إضافة / تعديل / حذف ---------- */
+$("add").onclick = () => form(null);
+
+function form(row) {
+  const c = T[cur];
+  const df = $("df");
+  const fields = c.f.map(f => {
+    let input;
+    if (f.ref) {
+      input = el("select", { name: f.k }, el("option", { value: "", textContent: "—" }),
+        ...refs[f.k].map(r => el("option", { value: r.id, textContent: r[f.show] })));
+    } else {
+      input = el("input", { name: f.k, type: f.t || "text", required: !!f.req });
+      if (f.t === "number") input.step = "any";
+    }
+    if (row && row[f.k] != null) input.value = row[f.k];
+    else if (f.k === "sold_on") input.value = new Date().toISOString().slice(0, 10);
+    return el("div", {}, el("label", { textContent: f.l }), input);
+  });
+  const err = el("div", { className: "err" });
+  df.replaceChildren(el("h3", { textContent: (row ? "تعديل " : "إضافة ") + c.title }), ...fields, err,
+    el("div", { className: "row" },
+      el("button", { textContent: "حفظ" }),
+      el("button", { type: "button", className: "ghost", textContent: "إلغاء", onclick: () => $("dlg").close() })));
+  df.onsubmit = async e => {
+    e.preventDefault();
+    const body = {};
+    for (const f of c.f) {
+      const v = df.elements[f.k].value;
+      body[f.k] = v === "" ? null : (f.t === "number" || f.ref ? Number(v) : v);
+    }
+    const { error } = row ? await sb.from(cur).update(body).eq("id", row.id) : await sb.from(cur).insert(body);
+    if (error) return (err.textContent = error.message);
+    $("dlg").close();
+    show(cur);
+  };
+  $("dlg").showModal();
+}
+
+async function remove(row) {
+  if (!confirm("هل تريد حذف هذا السجل؟")) return;
+  const { error } = await sb.from(cur).delete().eq("id", row.id);
+  if (error) return say($("amsg"), error.message, "err");
+  show(cur);
+}
 </script>
 </body>
 </html>
