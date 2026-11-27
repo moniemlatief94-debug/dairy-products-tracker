@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>متابعة منتجات الألبان</title>
+<style>
+  :root { --ink:#1d2b3a; --muted:#5b6b7b; --brand:#1f6feb; --bg:#f6f9fc; --card:#fff; --line:#e3eaf2; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, "Segoe UI", Tahoma, sans-serif; color:var(--ink); background:var(--bg); line-height:1.7; }
+  .wrap { max-width:960px; margin:0 auto; padding:0 20px; }
+  nav { display:flex; justify-content:space-between; align-items:center; padding:18px 0; font-weight:700; }
+  nav a { color:var(--brand); text-decoration:none; font-weight:600; }
+  .hero { display:grid; gap:32px; grid-template-columns:1.2fr 1fr; align-items:center; padding:40px 0 56px; }
+  h1 { font-size:2.2rem; line-height:1.3; margin:0 0 12px; }
+  .hero p { color:var(--muted); font-size:1.1rem; margin:0; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:24px; }
+  .features { display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); padding-bottom:56px; }
+  .features h3 { margin:0 0 6px; font-size:1.05rem; }
+  .features p { margin:0; color:var(--muted); font-size:.95rem; }
+  form { display:grid; gap:12px; }
+  label { font-size:.9rem; color:var(--muted); }
+  input { width:100%; padding:11px 12px; border:1px solid var(--line); border-radius:8px; font:inherit; }
+  button { padding:12px; border:0; border-radius:8px; background:var(--brand); color:#fff; font:inherit; font-weight:700; cursor:pointer; }
+  button:disabled { opacity:.6; }
+  .tabs { display:flex; gap:8px; margin-bottom:14px; }
+  .tabs button { flex:1; background:#eef3f9; color:var(--ink); }
+  .tabs button.on { background:var(--brand); color:#fff; }
+  #msg { min-height:1.4em; font-size:.92rem; }
+  #msg.err { color:#c62828; } #msg.ok { color:#1b7f3b; }
+  footer { text-align:center; color:var(--muted); padding:24px 0 40px; font-size:.9rem; }
+  @media (max-width:720px){ .hero{grid-template-columns:1fr;} h1{font-size:1.7rem;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav><span>🥛 متابعة الألبان</span><a href="#auth">تسجيل الدخول</a></nav>
+
+  <section class="hero">
+    <div>
+      <h1>تابع منتجاتك وشاحناتك ومبيعاتك في مكان واحد</h1>
+      <p>تطبيق ويب لإدارة منتجات الألبان، ودرجات حرارة الشاحنات والأختام، والشحنات والمبيعات، مع بيانات محفوظة ومشتركة بين فريقك.</p>
+    </div>
+
+    <div class="card" id="auth">
+      <div class="tabs">
+        <button type="button" id="tab-in" class="on">دخول</button>
+        <button type="button" id="tab-up">حساب جديد</button>
+      </div>
+      <form id="f">
+        <div><label for="email">البريد الإلكتروني</label><input id="email" type="email" required autocomplete="email"></div>
+        <div><label for="pw">كلمة المرور</label><input id="pw" type="password" required minlength="6" autocomplete="current-password"></div>
+        <button id="go">دخول</button>
+        <div id="msg" role="status"></div>
+      </form>
+    </div>
+  </section>
+
+  <section class="features">
+    <div class="card"><h3>📦 المنتجات</h3><p>الأنواع والكميات وتواريخ الإنتاج والصلاحية.</p></div>
+    <div class="card"><h3>🚚 الشاحنات</h3><p>درجات الحرارة وأرقام الأختام لكل رحلة.</p></div>
+    <div class="card"><h3>💰 المبيعات</h3><p>تتبع الشحنات والمبيعات والتقارير.</p></div>
+    <div class="card"><h3>☁️ سحابي</h3><p>بياناتك محفوظة ومتاحة من أي جهاز.</p></div>
+  </section>
+
+  <footer>© متابعة منتجات الألبان</footer>
+</div>
+
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+// Supabase > Project Settings > API > "anon public" key (safe to expose; protect data with RLS).
+const SUPABASE_URL = "https://uxdijsgxdakuvqqrrrqu.supabase.co";
+const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
+
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const $ = id => document.getElementById(id);
+let mode = "in";
+
+function setMode(m) {
+  mode = m;
+  $("tab-in").classList.toggle("on", m === "in");
+  $("tab-up").classList.toggle("on", m === "up");
+  $("go").textContent = m === "in" ? "دخول" : "إنشاء حساب";
+  $("msg").textContent = "";
+}
+$("tab-in").onclick = () => setMode("in");
+$("tab-up").onclick = () => setMode("up");
+
+function say(text, cls) { $("msg").className = cls; $("msg").textContent = text; }
+
+async function showSession() {
+  const { data } = await sb.auth.getSession();
+  if (!data.session) return;
+  $("auth").innerHTML = `<p>مرحباً ${data.session.user.email}</p><button id="out">تسجيل الخروج</button>`;
+  $("out").onclick = async () => { await sb.auth.signOut(); location.reload(); };
+}
+
+$("f").onsubmit = async e => {
+  e.preventDefault();
+  $("go").disabled = true;
+  const creds = { email: $("email").value.trim(), password: $("pw").value };
+  const { error } = mode === "in" ? await sb.auth.signInWithPassword(creds) : await sb.auth.signUp(creds);
+  $("go").disabled = false;
+  if (error) return say(error.message, "err");
+  if (mode === "up") return say("تم إنشاء الحساب. تحقق من بريدك لتأكيده.", "ok");
+  showSession();
+};
+
+showSession();
+</script>
+</body>
+</html>
